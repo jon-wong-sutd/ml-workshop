@@ -97,8 +97,39 @@ def main(_):
   sess = tf.InteractiveSession()
   tf.global_variables_initializer().run()
 
+  import numpy as np
+
+  # Take 10 datapoints for each number.
+  numbers = [[] for i in range(10)]
+  for i in range(len(mnist.train.labels)):
+    if sum(len(x) for x in numbers) == 100:
+      break
+
+    number = np.where(mnist.train.labels[i] == 1)[0][0]
+    if len(numbers[number]) < 10:
+      numbers[number].append(i)
+
+  import vis_mnist as vm
+  # for i in range(10):
+  #   vm.show_image(numbers[i])
+
+  # Scramble subset.
+  numbers = np.asarray(numbers)
+  numbers = numbers.reshape(100)
+  np.random.shuffle(numbers)
+
+  subset_images = []
+  subset_labels = []
+  for i in numbers:
+    subset_images.append(mnist.train.images[i])
+    subset_labels.append(mnist.train.labels[i])
+
+  mnist.train._images = np.asarray(subset_images)
+  mnist.train._labels = np.asarray(subset_labels)
+  mnist.train._num_examples = 100
+
   # Train
-  for _ in range(1000):
+  for _ in range(400):
     batch_xs, batch_ys = mnist.train.next_batch(50)
     sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
 
@@ -107,7 +138,7 @@ def main(_):
                                         feed_dict={x: mnist.test.images,
                                         y_: mnist.test.labels, keep_prob: 1.0})))
 
-  for _ in range(1000):
+  for _ in range(400):
     batch_xs, batch_ys = mnist.train.next_batch(50)
     sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
 
@@ -116,16 +147,17 @@ def main(_):
                                         feed_dict={x: mnist.test.images,
                                         y_: mnist.test.labels, keep_prob: 1.0})))
 
-  import elastic_deform as ed
-  # Deform all images first.
-  print("Deforming all 'train' images..")
-  for i in range(len(mnist.train.images)):
-    new_image = ed.deform(mnist.train.images[i].reshape((28, 28)))
-    mnist.train.images[i] = new_image.reshape(784)
-    print('Processed image {}'.format(i), end='\r')
-  print("\nDeformation done.")
+  if FLAGS.data_aug is True:
+    import elastic_deform as ed
+    # Deform all images first.
+    print("Deforming all 'train' images..")
+    for i in range(len(mnist.train.images)):
+      new_image = ed.deform(mnist.train.images[i].reshape((28, 28)))
+      mnist.train.images[i] = new_image.reshape(784)
+      print('Processed image {}'.format(i), end='\r')
+    print("\nDeformation done.")
 
-  for _ in range(1000):
+  for _ in range(400):
     batch_xs, batch_ys = mnist.train.next_batch(50)
     sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
 
@@ -138,8 +170,15 @@ if __name__ == '__main__':
   parser.add_argument('--data_dir', type=str, default='/tmp/tensorflow/mnist/input_data',
                       help='Directory for storing input data')
   FLAGS, unparsed = parser.parse_known_args()
+  FLAGS.data_aug = False
   tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
 
-  # With data augmentation... 0.9635, 0.9721, 0.9820.
-  # Without... 0.9633, 0.9790, 0.9819.
+  # With data augmentation...
+  #   0.8002, 0.8077, 0.8267
+  #   0.7842, 0.7903, 0.8041
+  #   0.7887, 0.7914, 0.8070
+  # Without...
+  #   0.7712, 0.7814, 0.7907
+  #   0.7726, 0.7902, 0.7974
+  #   0.7910, 0.7989, 0.8043
   # No difference.

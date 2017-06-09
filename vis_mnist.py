@@ -12,7 +12,7 @@ def white_border(image):
   image[0, 0:] = image[27, 0:] = 1
   return image
 
-def vissomedigits(indices):
+def show_image(indices):
 
   input_data_dir= '/tmp/tensorflow/mnist/input_data'
 
@@ -31,7 +31,6 @@ def vissomedigits(indices):
       col = np.concatenate((col, next_image))
 
     if i > 0 and i % 3 == 2:
-      print('here')
       # Column is full. Append to im.
       if im is None:
         im = col
@@ -55,5 +54,5 @@ def vissomedigits(indices):
   plt.show()
 
 if __name__=='__main__':
-  vissomedigits([0, 1, 2, 3, 4, 5, 6, 7])
+  some_image([0, 1, 2, 3, 4, 5, 6, 7])
   # vissomedigits([0, 1])
