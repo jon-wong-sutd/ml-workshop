@@ -48,9 +48,6 @@ def max_pool_2x2(x):
 
 # Create the model
 x = tf.placeholder(tf.float32, [None, 784])
-W = tf.Variable(tf.zeros([784, 10]))
-b = tf.Variable(tf.zeros([10]))
-y = tf.matmul(x, W) + b
 
 # Define loss and optimizer
 y_ = tf.placeholder(tf.float32, [None, 10])
@@ -147,36 +144,40 @@ def main(_):
                                         feed_dict={x: mnist.test.images,
                                         y_: mnist.test.labels, keep_prob: 1.0})))
 
-  if FLAGS.data_aug is True:
-    import elastic_deform as ed
-    # Deform all images first.
-    print("Deforming all 'train' images..")
-    for i in range(len(mnist.train.images)):
-      new_image = ed.deform(mnist.train.images[i].reshape((28, 28)))
-      mnist.train.images[i] = new_image.reshape(784)
-      print('Processed image {}'.format(i), end='\r')
-    print("\nDeformation done.")
+  for i in range(2):
+    if FLAGS.data_aug is True:
+      import elastic_deform as ed
+      # Deform all images first.
+      print("Deforming all 'train' images..")
+      for i in range(len(mnist.train.images)):
+        new_image = ed.deform(mnist.train.images[i].reshape((28, 28)))
+        mnist.train.images[i] = new_image.reshape(784)
+        print('Processed image {}'.format(i), end='\r')
+      print("\nDeformation done.")
 
-  for _ in range(400):
-    batch_xs, batch_ys = mnist.train.next_batch(50)
-    sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
+    for _ in range(400):
+      batch_xs, batch_ys = mnist.train.next_batch(50)
+      sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
 
-  # Test trained model
-  print(sess.run(accuracy, feed_dict={x: mnist.test.images,
-                                      y_: mnist.test.labels, keep_prob: 1.0}))
+    # Test trained model
+    print(sess.run(accuracy, feed_dict={x: mnist.test.images,
+                                        y_: mnist.test.labels, keep_prob: 1.0}))
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument('--data_dir', type=str, default='/tmp/tensorflow/mnist/input_data',
                       help='Directory for storing input data')
   FLAGS, unparsed = parser.parse_known_args()
-  FLAGS.data_aug = False
+  FLAGS.data_aug = True
   tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
 
   # With data augmentation...
   #   0.8002, 0.8077, 0.8267
   #   0.7842, 0.7903, 0.8041
   #   0.7887, 0.7914, 0.8070
+  #   0.8037, 0.8179, 0.8178, 0.8199
+  #   0.7958, 0.8042, 0.8012, 0.7969
+  #   0.7994, 0.8058, 0.8247, 0.8286
   # Without...
   #   0.7712, 0.7814, 0.7907
   #   0.7726, 0.7902, 0.7974
