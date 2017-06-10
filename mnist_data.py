@@ -27,7 +27,7 @@ def load_mnist_data(train_dir, one_hot=True):
 
   return train_images, train_labels
 
-def select_data(n=10, double_with_deform=False, train_dir='MNIST-data'):
+def select_data(n=10, expand_with_deform=0, train_dir='MNIST-data'):
   """Extracts a subset of mnist train data.
   If doublt_with_deform is True, dataset size is doubled adding a deformed duplicate.
   n is number of examples for each digit/class.
@@ -71,7 +71,7 @@ def select_data(n=10, double_with_deform=False, train_dir='MNIST-data'):
   # Construct normal dataset
   normal = mnist.DataSet(np.asarray(subset_images), np.asarray(subset_labels), **options)
 
-  if double_with_deform is True:
+  for j in range(expand_with_deform):
     print("Deforming all 'train' images..")
     count = 0
     for i in numbers:

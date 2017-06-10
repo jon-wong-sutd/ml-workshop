@@ -106,81 +106,49 @@ def main(_):
   impr_summ = tf.summary.scalar('improvement', improvement)
 
   sess = tf.InteractiveSession()
-  tf.global_variables_initializer().run()
   # Store all variables' values now. We want each run to be the same, not random.
+  tf.global_variables_initializer().run()
   saver = tf.train.Saver([W_conv1, b_conv1, W_conv2, b_conv2, W_fc1, b_fc1, W_fc2, b_fc2])
   init_save = 'saves/init_values'
   saver.save(sess, init_save)
 
-  writer = tf.summary.FileWriter('./log')
   normal_writer = tf.summary.FileWriter('./log/normal')
   expanded_writer = tf.summary.FileWriter('./log/expanded')
 
-  def train(train_steps, batch_size, normal_dataset, expanded_dataset, step=0):
-    # Initialize all weights first.
+  def train(train_steps, batch_size, normal_dataset, expanded_dataset):
+    # Initialize all variables first.
     saver.restore(sess, init_save)
 
-    for _ in range(train_steps):
-      batch_xs, batch_ys = expanded_dataset.next_batch(batch_size, shuffle=False)
-      sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
-
-    # Test trained model
-    summ, acc_val = sess.run([acc_summ, tf.assign(acc3, accuracy)],
-               feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
-    print('Data Aug accuracy: {}'.format(acc_val))
-
-    for _ in range(train_steps):
-      batch_xs, batch_ys = expanded_dataset.next_batch(batch_size, shuffle=False)
-      sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
-
-    # Test trained model
-    summ, acc_val = sess.run([acc_summ, tf.assign(acc4, accuracy)],
-               feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
-    print('Data Aug accuracy: {}'.format(acc_val))
-    expanded_writer.add_summary(summ, step)
-
-    saver.restore(sess, init_save) # Reset for run with larger dataset
-
-    # Train
-    for _ in range(train_steps):
+    # Train with normal set.
+    for i in range(train_steps):
       batch_xs, batch_ys = normal_dataset.next_batch(batch_size, shuffle=False)
       sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
+      if i % 10 == 0:
+        # Test trained model
+        summ, acc_val = sess.run([acc_summ, accuracy],
+                   feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
+        print('Accuracy {} (normal): {}'.format(i, acc_val))
+        normal_writer.add_summary(summ, i)
 
-    # Test trained model
-    summ, acc_val = sess.run([acc_summ, tf.assign(acc1, accuracy)],
-                feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
-    print('Non-aug accuracy: {}'.format(acc_val))
-
-    for _ in range(train_steps):
-      batch_xs, batch_ys = normal_dataset.next_batch(batch_size, shuffle=False)
+    saver.restore(sess, init_save)
+    # Train with expanded set.
+    for i in range(train_steps):
+      batch_xs, batch_ys = expanded_dataset.next_batch(batch_size, shuffle=False)
       sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
+      if i % 10 == 0:
+        # Test trained model
+        summ, acc_val = sess.run([acc_summ, accuracy],
+                   feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
+        print('Accuracy {} (expanded): {}'.format(i, acc_val))
+        expanded_writer.add_summary(summ, i)
 
-    # Test trained model
-    summ, acc_val = sess.run([acc_summ, tf.assign(acc2, accuracy)],
-                feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
-    print('Non-aug accuracy: {}'.format(acc_val))
-    normal_writer.add_summary(summ, step)
-
-    summ, impr = sess.run([impr_summ, improvement])
-    return summ, impr
-
-  for i in range(10):
-    # 50 for train_steps seems to hit plateau. Overfitting for dataset 10 (for each digit).
-    # summ, impr = train((i + 1) * 10)
-
-    # Now, we vary dataset size, and train_steps in sync.
-    # 5 times over entire epochs isn't working too well. Try 20.
-    # Ensure each train step uses an entire epoch (normal dataset) 20 times.
-    n = 10 * (i + 1)
-    # Select data once. Want to check whether results can be reproduced exactly.
-    normal_dataset, expanded_dataset = md.select_data(n, True)
-
-    batch_size = 50
-    train_steps = ((n * 10) // batch_size + 1) * 20
-    print('train_steps: {}'.format(train_steps))
-    summ, impr = train(train_steps, batch_size, normal_dataset, expanded_dataset, i)
-    writer.add_summary(summ, i)
-    print('Impr {}: {}'.format(i, impr))
+  n = 10
+  # Expand normal set by duplicating 5 times. 6 times of normal set size in total.
+  normal_dataset, expanded_dataset = md.select_data(n, 5)
+  train_steps = 200
+  print('train_steps: {}'.format(train_steps))
+  batch_size = 50
+  train(train_steps, batch_size, normal_dataset, expanded_dataset)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
