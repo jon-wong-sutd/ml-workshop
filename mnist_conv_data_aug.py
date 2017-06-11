@@ -1,3 +1,23 @@
+# Copyright 2015 The TensorFlow Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
+"""A very simple MNIST classifier.
+
+See extensive documentation at
+http://tensorflow.org/tutorials/mnist/beginners/index.md
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -13,7 +33,6 @@ import tensorflow as tf
 import elastic_deform as ed
 import mnist_data as md
 import numpy as np
-from pathlib import Path
 
 FLAGS = None
 
@@ -78,42 +97,72 @@ def main(_):
   accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
   acc_summ = tf.summary.scalar('accuracy', accuracy)
 
+  # Accuracy trackers
+  acc1 = tf.get_variable('accuracy1', [], dtype=tf.float32)
+  acc2 = tf.get_variable('accuracy2', [], dtype=tf.float32)
+  acc3 = tf.get_variable('accuracy3', [], dtype=tf.float32)
+  acc4 = tf.get_variable('accuracy4', [], dtype=tf.float32)
+  improvement = tf.divide(tf.subtract(acc4, acc3), tf.subtract(acc2, acc1))
+  impr_summ = tf.summary.scalar('improvement', improvement)
+
+  max_acc_summ = tf.summary.scalar('max_accuracy', accuracy)
+
   sess = tf.InteractiveSession()
   # Store all variables' values now. We want each run to be the same, not random.
   tf.global_variables_initializer().run()
   saver = tf.train.Saver([W_conv1, b_conv1, W_conv2, b_conv2, W_fc1, b_fc1, W_fc2, b_fc2])
-  save_file = 'mnist_conv/model'
+  init_save = 'saves/init_values'
+  saver.save(sess, init_save)
 
-  writer = tf.summary.FileWriter('./log')
+  normal_writer = tf.summary.FileWriter('./log/normal')
+  expanded_writer = tf.summary.FileWriter('./log/expanded')
 
-  file = Path(save_file)
-  if file.is_file():
-    saver.restore(save_file)
-  summ, acc_val = sess.run([acc_summ, accuracy],
-             feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
-  highest_acc = acc_val
-  print('Starting with accuracy of {}.'.format(highest_acc))
+  def train(train_steps, batch_size, normal_dataset, expanded_dataset):
+    # Initialize all variables first.
+    saver.restore(sess, init_save)
 
-  checkpoint_step = 10
+    highest_acc = 0
 
-  def train(batch_size):
+    # Train with expanded set.
     for i in range(train_steps):
-      batch_xs, batch_ys = mnist.train.next_batch(batch_size)
+      batch_xs, batch_ys = expanded_dataset.next_batch(batch_size)
       sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
-      if highest_acc > 0.99:
-        checkpoint_step = 1
-      if i % checkpoint_step == 0:
-        # Test trained model. Cheating here, just use test set to 'validate'.
-        summ, acc_val = sess.run([acc_summ, accuracy],
+      if i % 10 == 0:
+        # Test trained model
+        summ, max_summ, acc_val = sess.run([acc_summ, max_acc_summ, accuracy],
                    feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
-        print('Accuracy {} (normal): {}'.format(i, acc_val))
-        writer.add_summary(summ, i)
+        print('Accuracy {} (expanded): {}'.format(i, acc_val))
+        expanded_writer.add_summary(summ, i)
         if acc_val > highest_acc:
-          saver.save(save_file)
+          expanded_writer.add_summary(max_summ, i)
           highest_acc = acc_val
 
+    highest_acc = 0
+
+    saver.restore(sess, init_save)
+    # Train with normal set.
+    for i in range(train_steps):
+      batch_xs, batch_ys = normal_dataset.next_batch(batch_size)
+      sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
+      if i % 10 == 0:
+        # Test trained model
+        summ, max_summ, acc_val = sess.run([acc_summ, max_acc_summ, accuracy],
+                   feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
+        print('Accuracy {} (normal): {}'.format(i, acc_val))
+        normal_writer.add_summary(summ, i)
+        if acc_val > highest_acc:
+          normal_writer.add_summary(max_summ, i)
+          highest_acc = acc_val
+
+  n = 10
+  # Expand normal set by duplicating 5 times. 6 times of normal set size in total.
+  normal_dataset, expanded_dataset = md.select_data(n, 5)
+  # Normal: Highest 0.7601 at step 990. Seems to peak at steps 600-700.
+  # Expanded: No peak seen even at step 1000.
+  train_steps = 1000
+  print('train_steps: {}'.format(train_steps))
   batch_size = 50
-  train(batch_size)
+  train(train_steps, batch_size, normal_dataset, expanded_dataset)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()

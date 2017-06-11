@@ -76,14 +76,26 @@ def select_data(n=10, expand_with_deform=0, train_dir='MNIST-data'):
     count = 0
     for i in numbers:
       shape = train_images[i].shape
-      new_image = ed.deform(train_images[i].reshape((28, 28)))
+      image = train_images[i].reshape((28, 28))
+      new_image = ed.rotate(image)
+      new_image = ed.translate(new_image)
+      new_image = ed.deform(new_image)
       subset_images.append(new_image.reshape(shape))
       subset_labels.append(train_labels[i])
       count += 1
       print('Processed image {}'.format(count), end='\r')
     print("\nDeformation done.")
 
-  expanded = mnist.DataSet(np.asarray(subset_images), np.asarray(subset_labels), **options)
+  subset_images = np.asarray(subset_images)
+  subset_labels = np.asarray(subset_labels)
+
+  # Shuffle expanded set.
+  perm = np.arange(len(subset_images))
+  np.random.shuffle(perm)
+  subset_images = subset_images[perm]
+  subset_labels = subset_labels[perm]
+
+  expanded = mnist.DataSet(subset_images, subset_labels, **options)
   return normal, expanded
 
 if __name__ == '__main__':
