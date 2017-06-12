@@ -78,39 +78,50 @@ def main(_):
   accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
   acc_summ = tf.summary.scalar('accuracy', accuracy)
 
+  global_step = tf.Variable(-1, name='global_step')
+
   sess = tf.InteractiveSession()
   # Store all variables' values now. We want each run to be the same, not random.
   tf.global_variables_initializer().run()
-  saver = tf.train.Saver([W_conv1, b_conv1, W_conv2, b_conv2, W_fc1, b_fc1, W_fc2, b_fc2])
+  saver = tf.train.Saver([W_conv1, b_conv1, W_conv2, b_conv2, W_fc1, b_fc1, W_fc2, b_fc2, global_step])
   save_file = 'mnist_conv/model'
 
   writer = tf.summary.FileWriter('./log')
 
-  file = Path(save_file)
-  if file.is_file():
-    saver.restore(save_file)
-  summ, acc_val = sess.run([acc_summ, accuracy],
-             feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
-  highest_acc = acc_val
-  print('Starting with accuracy of {}.'.format(highest_acc))
-
-  checkpoint_step = 10
-
   def train(batch_size):
-    for i in range(train_steps):
+    # Init highest_acc.
+    highest_acc = 0
+    file = Path(save_file + '.index')
+    if file.is_file():
+      saver.restore(sess, save_file)
+    summ, acc_val = sess.run([acc_summ, accuracy],
+               feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
+    highest_acc = acc_val
+    print('Starting with accuracy of {}.'.format(highest_acc))
+    # The saved global_step is the done step. Advance by one.
+    sess.run(tf.assign(global_step, global_step.eval() + 1))
+    print('Starting with global_step {}.'.format(global_step.eval()))
+
+    # Steps to do before checking accuracy (and possibly saving variables).
+    checkpoint_step = 1000
+
+    while True:
       batch_xs, batch_ys = mnist.train.next_batch(batch_size)
       sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
       if highest_acc > 0.99:
-        checkpoint_step = 1
-      if i % checkpoint_step == 0:
+        checkpoint_step = 100
+      if global_step.eval() % checkpoint_step == 0:
         # Test trained model. Cheating here, just use test set to 'validate'.
         summ, acc_val = sess.run([acc_summ, accuracy],
                    feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
-        print('Accuracy {} (normal): {}'.format(i, acc_val))
-        writer.add_summary(summ, i)
+        print('Accuracy {}: {}'.format(global_step.eval(), acc_val))
+        writer.add_summary(summ, global_step.eval())
         if acc_val > highest_acc:
-          saver.save(save_file)
+          saver.save(sess, save_file)
+          print('Saved model at accuracy {}'.format(acc_val))
           highest_acc = acc_val
+
+      sess.run(tf.assign(global_step, sess.run(global_step) + 1)) # Increment global_step.
 
   batch_size = 50
   train(batch_size)

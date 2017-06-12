@@ -122,12 +122,15 @@ def main(_):
     saver.restore(sess, init_save)
 
     highest_acc = 0
+    highest_acc_i = 0
+
+    checkpoint_step = 100
 
     # Train with expanded set.
     for i in range(train_steps):
       batch_xs, batch_ys = expanded_dataset.next_batch(batch_size)
       sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
-      if i % 10 == 0:
+      if i > 0 and i % checkpoint_step == 0:
         # Test trained model
         summ, max_summ, acc_val = sess.run([acc_summ, max_acc_summ, accuracy],
                    feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
@@ -136,15 +139,20 @@ def main(_):
         if acc_val > highest_acc:
           expanded_writer.add_summary(max_summ, i)
           highest_acc = acc_val
+          highest_acc_i = i
+        # If more than 5 checkpoints without improvement, quit.
+        if i - highest_acc_i >= 5 * checkpoint_step:
+          break
 
     highest_acc = 0
+    highest_acc_i = 0
 
     saver.restore(sess, init_save)
     # Train with normal set.
     for i in range(train_steps):
       batch_xs, batch_ys = normal_dataset.next_batch(batch_size)
       sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
-      if i % 10 == 0:
+      if i > 0 and i % checkpoint_step == 0:
         # Test trained model
         summ, max_summ, acc_val = sess.run([acc_summ, max_acc_summ, accuracy],
                    feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
@@ -153,6 +161,10 @@ def main(_):
         if acc_val > highest_acc:
           normal_writer.add_summary(max_summ, i)
           highest_acc = acc_val
+          highest_acc_i = i
+        # If more than 5 checkpoints without improvement, quit.
+        if i - highest_acc_i >= 5 * checkpoint_step:
+          break
 
   n = 10
   # Expand normal set by duplicating 5 times. 6 times of normal set size in total.
