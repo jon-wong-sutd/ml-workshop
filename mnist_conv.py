@@ -108,7 +108,7 @@ def main(_):
     while True:
       batch_xs, batch_ys = mnist.train.next_batch(batch_size)
       sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
-      if highest_acc > 0.99:
+      if highest_acc > 0.993:
         checkpoint_step = 100
       if global_step.eval() % checkpoint_step == 0:
         # Test trained model. Cheating here, just use test set to 'validate'.
