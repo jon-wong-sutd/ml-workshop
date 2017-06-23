@@ -1,3 +1,4 @@
 /MNIST-data/
 /saves/
 /log/
+__pycache__/
