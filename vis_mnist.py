@@ -5,16 +5,23 @@ from tensorflow.examples.tutorials.mnist import mnist
 
 import matplotlib.pyplot as plt
 
-def white_border(image):
-  for i in range(1, 27):
-    image[i, 0] = image[i, 27] = 1
+def pad(image, padding=1, color=0.5):
+  # Border of pixels.
+  v_border = np.ndarray((28, padding))
+  h_border = np.ndarray((padding, 28 + (padding * 2)))
+  v_border.fill(color)
+  h_border.fill(color)
 
-  image[0, 0:] = image[27, 0:] = 1
-  return image
+  new_img = image
+  new_img = np.concatenate((v_border, new_img), axis=1)
+  new_img = np.concatenate((new_img, v_border), axis=1)
+  new_img = np.concatenate((h_border, new_img))
+  new_img = np.concatenate((new_img, h_border))
+  return new_img
 
-def show_image(indices):
+def show_images(indices):
 
-  input_data_dir= '/tmp/tensorflow/mnist/input_data'
+  input_data_dir= 'MNIST-data'
 
   data_sets = input_data.read_data_sets(input_data_dir, fake_data=False)
 
@@ -24,7 +31,7 @@ def show_image(indices):
   im = None
   for i in range(len(indices)):
     next_image = images[indices[i],:].reshape((28, 28))
-    next_image = white_border(next_image)
+    next_image = pad(next_image)
     if col is None:
       col = next_image
     else:
@@ -39,7 +46,7 @@ def show_image(indices):
       col = None
 
   if col is not None:
-    blank = np.zeros((28, 28))
+    blank = pad(np.zeros((28, 28)))
     while i % 3 != 2:
       col = np.concatenate((col, blank))
       i += 1
@@ -54,5 +61,4 @@ def show_image(indices):
   plt.show()
 
 if __name__=='__main__':
-  some_image([0, 1, 2, 3, 4, 5, 6, 7])
-  # vissomedigits([0, 1])
+  show_images([0, 1, 2, 3, 4, 5, 6, 7])
