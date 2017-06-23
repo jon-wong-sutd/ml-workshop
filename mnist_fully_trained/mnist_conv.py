@@ -15,10 +15,6 @@ import mnist_data as md
 import numpy as np
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-
-from math import sqrt
-
 FLAGS = None
 
 def weight_variable(shape):
@@ -92,73 +88,47 @@ def main(_):
 
   writer = tf.summary.FileWriter('./log')
 
-  def kernel_on_grid(kernel, pad):
-    def factorization(n):
-        for i in range(int(sqrt(float(n))), 0, -1):
-          if n % i == 0:
-            if i == 1: print('Who would enter a prime number of filters')
-            return (i, int(n / i))
-    (grid_Y, grid_X) = factorization (kernel.get_shape()[3].value)
-    print ('grid: %d = (%d, %d)' % (kernel.get_shape()[3].value, grid_Y, grid_X))
-
-    x_min = tf.reduce_min(kernel)
-    x_max = tf.reduce_max(kernel)
-    kernel = (kernel - x_min) / (x_max - x_min)
-
-    # pad X and Y
-    x = tf.pad(kernel, tf.constant( [[pad,pad],[pad, pad],[0,0],[0,0]] ), mode = 'CONSTANT')
-
-    # X and Y dimensions, w.r.t. padding
-    Y = kernel.get_shape()[0] + 2 * pad
-    X = kernel.get_shape()[1] + 2 * pad
-
-    channels = kernel.get_shape()[2]
-
-    # put NumKernels to the 1st dimension
-    x = tf.transpose(x, (3, 0, 1, 2))
-    # organize grid on Y axis
-    x = tf.reshape(x, tf.stack([grid_X, Y * grid_Y, X, channels]))
-    print(x.shape)
-
-    # switch X and Y axes
-    x = tf.transpose(x, (0, 2, 1, 3))
-    # organize grid on X axis
-    x = tf.reshape(x, tf.stack([1, X * grid_X, Y * grid_Y, channels]))
-
-    # back to normal order (not combining with the next step for clarity)
-    x = tf.transpose(x, (2, 1, 3, 0))
-
-    # to tf.image_summary order [batch_size, height, width, channels],
-    #   where in this case batch_size == 1
-    x = tf.transpose(x, (3, 0, 1, 2))
-
-    # scaling to [0, 255] is not necessary for tensorboard
-    return x
-
   def train(batch_size):
     # Init highest_acc.
     highest_acc = 0
     file = Path(save_file + '.index')
     if file.is_file():
       saver.restore(sess, save_file)
+    summ, acc_val = sess.run([acc_summ, accuracy],
+               feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
+    highest_acc = acc_val
+    print('Starting with accuracy of {}.'.format(highest_acc))
+    # The saved global_step is the done step. Advance by one.
+    sess.run(tf.assign(global_step, global_step.eval() + 1))
+    print('Starting with global_step {}.'.format(global_step.eval()))
 
-    x = kernel_on_grid(W_conv1, 5)
-    w = tf.transpose(W_conv2, (2, 0, 1, 3))
+    # Steps to do before checking accuracy (and possibly saving variables).
+    checkpoint_step = 1000
 
-    # Visualize conv1 kernels
-    filter_summ = tf.summary.image('conv1/kernels', x, max_outputs=1)
-    writer.add_summary(sess.run(filter_summ))
-    for i in range(32):
-      y = kernel_on_grid(tf.expand_dims(w[i], 2), 5)
-      filter_summ = tf.summary.image('conv2/kernels', y, max_outputs=1)
-      writer.add_summary(sess.run(filter_summ))
-    writer.flush()
+    while True:
+      batch_xs, batch_ys = mnist.train.next_batch(batch_size)
+      sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
+      if highest_acc > 0.993:
+        checkpoint_step = 100
+      if global_step.eval() % checkpoint_step == 0:
+        # Test trained model. Cheating here, just use test set to 'validate'.
+        summ, acc_val = sess.run([acc_summ, accuracy],
+                   feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
+        print('Accuracy {}: {}'.format(global_step.eval(), acc_val))
+        writer.add_summary(summ, global_step.eval())
+        if acc_val > highest_acc:
+          saver.save(sess, save_file)
+          print('Saved model at accuracy {}'.format(acc_val))
+          highest_acc = acc_val
 
-  train()
+      sess.run(tf.assign(global_step, sess.run(global_step) + 1)) # Increment global_step.
+
+  batch_size = 50
+  train(batch_size)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
-  parser.add_argument('--data_dir', type=str, default='MNIST-data',
+  parser.add_argument('--data_dir', type=str, default='../MNIST-data',
                       help='Directory for storing input data')
   FLAGS, unparsed = parser.parse_known_args()
   FLAGS.data_aug = True
