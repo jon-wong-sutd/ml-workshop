@@ -47,18 +47,20 @@ def main(_):
     # batch_xs, batch_ys = mnist.train.next_batch(batch_size)
     # print(batch_xs.shape)
     # print(batch_ys[0])
-    batch_xs = [trainset.draw_seven().reshape(784), trainset.draw_four().reshape(784)]
+    batch_xs = [trainset.draw_class1().reshape(784), trainset.draw_class2().reshape(784)]
     batch_xs = np.array(batch_xs)
     batch_ys = [np.zeros((10)), np.zeros((10))]
     batch_ys[0][7 - 1] = 1
     batch_ys[1][4 - 1] = 1
     batch_ys = np.array(batch_ys)
 
+    # Force conv1 to see features exactly? Diamond, cross, hor, ver.
+
     acc_val = sess.run(accuracy,
       feed_dict={g.x: batch_xs, g.y_: batch_ys, g.keep_prob: 1.0})
     print('Before training: ' + str(acc_val))
 
-    for i in range(100):
+    for i in range(1000):
       sess.run(train_step, feed_dict={g.x: batch_xs, g.y_: batch_ys, g.keep_prob:1.0})
       acc_val = sess.run(accuracy,
         feed_dict={g.x: batch_xs, g.y_: batch_ys, g.keep_prob: 1.0})
@@ -73,9 +75,6 @@ def main(_):
   def visualize():
     x = utils.kernel_on_grid(g.W_conv1, 5)
     w = tf.transpose(g.W_conv2, (2, 0, 1, 3))
-
-    test = tf.transpose(g.W_conv1, (3, 0, 1, 2))
-    print(sess.run(tf.reshape(test[0], (5, 5))))
 
     # Visualize conv1 kernels
     filter_summ = tf.summary.image('conv1/kernels', x, max_outputs=1)

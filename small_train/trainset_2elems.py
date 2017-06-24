@@ -71,7 +71,66 @@ def draw_four():
 
   return img
 
-if __name__ == '__main__':
+def draw_cross():
+  img = np.ndarray((7, 7))
+  img.fill(0)
+
+  for i in range(5):
+    img[i + 1, i + 1] = 1
+    img[5 - i, i + 1] = 1
+
+  return img
+
+def draw_hor():
+  img = np.ndarray((7, 7))
+  img.fill(0)
+
+  for i in range(5):
+    img[3, i + 1] = 1
+
+  return img
+
+def draw_ver():
+  img = np.ndarray((7, 7))
+  img.fill(0)
+
+  for i in range(5):
+    img[i + 1, 3] = 1
+
+  return img
+
+def draw_diamond():
+  img = np.ndarray((7, 7))
+  img.fill(0)
+
+  startY = 3
+  for i in range(3):
+    img[startY + i, 1 + i] = 1
+    img[startY - i, 1 + i] = 1
+    img[startY + i, 5 - i] = 1
+    img[startY - i, 5 - i] = 1
+
+  return img
+
+def draw_class1():
+  row1 = np.concatenate((draw_cross(), draw_diamond()), axis=1)
+  row2 = np.concatenate((draw_hor(), draw_ver()), axis=1)
+  img = np.concatenate((row1, row2))
+  # Duplicate for 4 tiles. 28 x 28
+  img = np.concatenate((img, img), axis=1)
+  img = np.concatenate((img, img))
+  return img
+
+def draw_class2():
+  row1 = np.concatenate((draw_hor(), draw_hor()), axis=1)
+  row2 = np.concatenate((draw_diamond(), draw_diamond()), axis=1)
+  img = np.concatenate((row1, row2))
+  # Duplicate for 4 tiles. 28 x 28
+  img = np.concatenate((img, img), axis=1)
+  img = np.concatenate((img, img))
+  return img
+
+def test_numbers():
   import sys
   sys.path.insert(0, '../')
   import vis_mnist as vm
@@ -84,3 +143,28 @@ if __name__ == '__main__':
   plt.show()
   plt.imshow(four, cmap='gray')
   plt.show()
+
+if __name__ == '__main__':
+  img = draw_class1()
+  plt.imshow(img, cmap='gray')
+  plt.show()
+
+  img = draw_class2()
+  plt.imshow(img, cmap='gray')
+  plt.show()
+
+  # img = draw_diamond()
+  # plt.imshow(img, cmap='gray')
+  # plt.show()
+
+  # img = draw_hor()
+  # plt.imshow(img, cmap='gray')
+  # plt.show()
+
+  # img = draw_ver()
+  # plt.imshow(img, cmap='gray')
+  # plt.show()
+
+  # img = draw_cross()
+  # plt.imshow(img, cmap='gray')
+  # plt.show()
