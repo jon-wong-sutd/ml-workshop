@@ -11,9 +11,9 @@ num_classes = 10
 
 stride = 7
 
-def weight_variable(shape):
+def weight_variable(shape, trainable=True):
   initial = tf.truncated_normal(shape, stddev=0.1)
-  return tf.Variable(initial)
+  return tf.Variable(initial, trainable)
 
 def bias_variable(shape):
   initial = tf.constant(0.1, shape=shape)
@@ -32,7 +32,7 @@ x = tf.placeholder(tf.float32, [None, 784])
 # Define loss and optimizer
 y_ = tf.placeholder(tf.float32, [None, 10])
 
-W_conv1 = weight_variable([conv1_kernel_size, conv1_kernel_size, 1, num_conv1])
+W_conv1 = weight_variable([conv1_kernel_size, conv1_kernel_size, 1, num_conv1], trainable=False)
 b_conv1 = bias_variable([num_conv1])
 # Activation map 4 x 4
 

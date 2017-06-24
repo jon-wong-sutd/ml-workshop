@@ -72,7 +72,7 @@ def draw_four():
   return img
 
 def draw_cross():
-  img = np.ndarray((7, 7))
+  img = np.ndarray((7, 7), dtype=np.float32)
   img.fill(0)
 
   for i in range(5):
@@ -82,7 +82,7 @@ def draw_cross():
   return img
 
 def draw_hor():
-  img = np.ndarray((7, 7))
+  img = np.ndarray((7, 7), dtype=np.float32)
   img.fill(0)
 
   for i in range(5):
@@ -91,7 +91,7 @@ def draw_hor():
   return img
 
 def draw_ver():
-  img = np.ndarray((7, 7))
+  img = np.ndarray((7, 7), dtype=np.float32)
   img.fill(0)
 
   for i in range(5):
@@ -100,7 +100,7 @@ def draw_ver():
   return img
 
 def draw_diamond():
-  img = np.ndarray((7, 7))
+  img = np.ndarray((7, 7), dtype=np.float32)
   img.fill(0)
 
   startY = 3
@@ -114,7 +114,7 @@ def draw_diamond():
 
 def draw_class1():
   row1 = np.concatenate((draw_cross(), draw_diamond()), axis=1)
-  row2 = np.concatenate((draw_hor(), draw_ver()), axis=1)
+  row2 = np.concatenate((draw_diamond(), draw_cross()), axis=1)
   img = np.concatenate((row1, row2))
   # Duplicate for 4 tiles. 28 x 28
   img = np.concatenate((img, img), axis=1)
@@ -123,7 +123,7 @@ def draw_class1():
 
 def draw_class2():
   row1 = np.concatenate((draw_hor(), draw_hor()), axis=1)
-  row2 = np.concatenate((draw_diamond(), draw_diamond()), axis=1)
+  row2 = np.concatenate((draw_ver(), draw_ver()), axis=1)
   img = np.concatenate((row1, row2))
   # Duplicate for 4 tiles. 28 x 28
   img = np.concatenate((img, img), axis=1)

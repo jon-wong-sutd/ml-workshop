@@ -54,13 +54,21 @@ def main(_):
     batch_ys[1][4 - 1] = 1
     batch_ys = np.array(batch_ys)
 
-    # Force conv1 to see features exactly? Diamond, cross, hor, ver.
+    # Force conv1 to see features exactly. Diamond, cross, hor, ver.
+    value = sess.run(g.W_conv1)
+    per_kernel = np.transpose(value, (3, 2, 0, 1))
+    per_kernel[0][0] = trainset.draw_cross()
+    per_kernel[1][0] = trainset.draw_diamond()
+    per_kernel[2][0] = trainset.draw_hor()
+    per_kernel[3][0] = trainset.draw_ver()
+    per_kernel = tf.transpose(per_kernel, (2, 3, 1, 0))
+    sess.run(tf.assign(g.W_conv1, per_kernel))
 
     acc_val = sess.run(accuracy,
       feed_dict={g.x: batch_xs, g.y_: batch_ys, g.keep_prob: 1.0})
     print('Before training: ' + str(acc_val))
 
-    for i in range(1000):
+    for i in range(10000):
       sess.run(train_step, feed_dict={g.x: batch_xs, g.y_: batch_ys, g.keep_prob:1.0})
       acc_val = sess.run(accuracy,
         feed_dict={g.x: batch_xs, g.y_: batch_ys, g.keep_prob: 1.0})
@@ -73,6 +81,21 @@ def main(_):
     print('After training: ' + str(acc_val))
 
   def visualize():
+    # Draw inputs
+    input = tf.constant(np.array([trainset.draw_class1()]))
+    input = tf.expand_dims(input, 3)
+    print(input.shape)
+
+    input = tf.summary.image('inputs/class1', input)
+    writer.add_summary(sess.run(input))
+
+    input = tf.constant(np.array([trainset.draw_class2()]))
+    input = tf.expand_dims(input, 3)
+    print(input.shape)
+
+    input = tf.summary.image('inputs/class2', input)
+    writer.add_summary(sess.run(input))
+
     x = utils.kernel_on_grid(g.W_conv1, 5)
     w = tf.transpose(g.W_conv2, (2, 0, 1, 3))
 
