@@ -1,4 +1,3 @@
-import vis_mnist as vm
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -72,12 +71,16 @@ def draw_four():
 
   return img
 
-seven = draw_seven();
-seven = vm.pad(seven)
-four = draw_four()
-four = vm.pad(four)
+if __name__ == '__main__':
+  import sys
+  sys.path.insert(0, '../')
+  import vis_mnist as vm
+  seven = draw_seven();
+  seven = vm.pad(seven)
+  four = draw_four()
+  four = vm.pad(four)
 
-plt.imshow(seven, cmap='gray')
-plt.show()
-plt.imshow(four, cmap='gray')
-plt.show()
+  plt.imshow(seven, cmap='gray')
+  plt.show()
+  plt.imshow(four, cmap='gray')
+  plt.show()
