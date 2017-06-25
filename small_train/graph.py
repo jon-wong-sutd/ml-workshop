@@ -49,7 +49,7 @@ final_activation_size = 1 * 1
 h_conv2 = tf.nn.relu(conv2d(h_conv1, W_conv2, conv2_kernel_size) + b_conv2)
 
 # fc_range = 1024
-fc_range = 5
+fc_range = 10
 W_fc1 = weight_variable([final_activation_size * num_conv2, fc_range])
 b_fc1 = bias_variable([fc_range])
 
