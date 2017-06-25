@@ -85,8 +85,9 @@ def draw_hor():
   img = np.ndarray((7, 7), dtype=np.float32)
   img.fill(0)
 
-  for i in range(5):
-    img[3, i + 1] = 1
+  for i in range(2, 5):
+    img[1, i] = 1
+    img[5, i] = 1
 
   return img
 
@@ -94,8 +95,9 @@ def draw_ver():
   img = np.ndarray((7, 7), dtype=np.float32)
   img.fill(0)
 
-  for i in range(5):
-    img[i + 1, 3] = 1
+  for i in range(2, 5):
+    img[i, 1] = 1
+    img[i, 5] = 1
 
   return img
 
@@ -103,31 +105,33 @@ def draw_diamond():
   img = np.ndarray((7, 7), dtype=np.float32)
   img.fill(0)
 
-  startY = 3
-  for i in range(3):
-    img[startY + i, 1 + i] = 1
-    img[startY - i, 1 + i] = 1
-    img[startY + i, 5 - i] = 1
-    img[startY - i, 5 - i] = 1
-
+  img[2, 3] = img[3, 2] = img[3, 4] = img[4, 3] = 1
   return img
 
 def draw_class1():
-  row1 = np.concatenate((draw_cross(), draw_diamond()), axis=1)
-  row2 = np.concatenate((draw_diamond(), draw_cross()), axis=1)
+  row1 = np.concatenate((draw_cross(), draw_cross()), axis=1)
+  row1 = np.concatenate((row1, row1), axis=1)
+  row1 = np.concatenate((row1, row1))
+  # row2 = np.concatenate((draw_diamond(), draw_diamond()), axis=1)
+  # row2 = np.concatenate((row2, row2), axis=1)
+  # row2 = np.concatenate((row2, row2))
+  row2 = np.ndarray((14, 28), dtype=np.float32)
+  row2.fill(0)
   img = np.concatenate((row1, row2))
-  # Duplicate for 4 tiles. 28 x 28
-  img = np.concatenate((img, img), axis=1)
-  img = np.concatenate((img, img))
+  # img = np.concatenate((row1, row1))
   return img
 
 def draw_class2():
-  row1 = np.concatenate((draw_hor(), draw_hor()), axis=1)
+  row1 = np.ndarray((14, 28), dtype=np.float32)
+  row1.fill(0)
+  # row1 = np.concatenate((draw_hor(), draw_hor()), axis=1)
+  # row1 = np.concatenate((row1, row1), axis=1)
+  # row1 = np.concatenate((row1, row1))
   row2 = np.concatenate((draw_ver(), draw_ver()), axis=1)
+  row2 = np.concatenate((row2, row2), axis=1)
+  row2 = np.concatenate((row2, row2))
   img = np.concatenate((row1, row2))
-  # Duplicate for 4 tiles. 28 x 28
-  img = np.concatenate((img, img), axis=1)
-  img = np.concatenate((img, img))
+  # img = np.concatenate((row2, row2))
   return img
 
 def test_numbers():

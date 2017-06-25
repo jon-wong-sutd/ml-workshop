@@ -5,7 +5,7 @@ num_conv1 = 4
 conv1_kernel_size = 7
 # 2 neurons in layer 2. Only 2 classes to recognize.
 num_conv2 = 2
-conv2_kernel_size = 2
+conv2_kernel_size = 4
 # 10 classes to classify into.
 num_classes = 10
 
@@ -15,9 +15,9 @@ def weight_variable(shape, trainable=True):
   initial = tf.truncated_normal(shape, stddev=0.1)
   return tf.Variable(initial, trainable)
 
-def bias_variable(shape):
+def bias_variable(shape, trainable=True):
   initial = tf.constant(0.1, shape=shape)
-  return tf.Variable(initial)
+  return tf.Variable(initial, trainable)
 
 def conv2d(x, W, stride):
   return tf.nn.conv2d(x, W, strides=[1, stride, stride, 1], padding='SAME')
@@ -33,17 +33,18 @@ x = tf.placeholder(tf.float32, [None, 784])
 y_ = tf.placeholder(tf.float32, [None, 10])
 
 W_conv1 = weight_variable([conv1_kernel_size, conv1_kernel_size, 1, num_conv1], trainable=False)
-b_conv1 = bias_variable([num_conv1])
+b_conv1 = bias_variable([num_conv1], trainable=False)
 # Activation map 4 x 4
 
 x_image = tf.reshape(x, [-1,28,28,1])
 
 h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1, conv1_kernel_size) + b_conv1)
 
-W_conv2 = weight_variable([conv2_kernel_size, conv2_kernel_size, num_conv1, num_conv2])
-b_conv2 = bias_variable([num_conv2])
-# Activation map 2 x 2
-final_activation_size = 2 * 2
+W_conv2 = weight_variable([conv2_kernel_size, conv2_kernel_size, num_conv1, num_conv2], trainable=False)
+b_conv2 = bias_variable([num_conv2], trainable=False)
+# Activation map 1 x 1
+# final_activation_size = 2 * 2
+final_activation_size = 1 * 1
 
 h_conv2 = tf.nn.relu(conv2d(h_conv1, W_conv2, conv2_kernel_size) + b_conv2)
 

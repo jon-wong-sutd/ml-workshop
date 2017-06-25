@@ -15,7 +15,10 @@ import trainset_2elems as trainset
 import utils
 
 import numpy as np
+import math
 from pathlib import Path
+
+import matplotlib.pyplot as plt
 
 # import sys
 # sys.path.insert(0, '../')
@@ -43,55 +46,97 @@ def main(_):
 
   writer = tf.summary.FileWriter('./log')
 
+  batch_xs = [trainset.draw_class1().reshape(784), trainset.draw_class2().reshape(784)]
+  batch_xs = np.array(batch_xs)
+  batch_ys = [np.zeros((10)), np.zeros((10))]
+  batch_ys[0][7 - 1] = 1
+  batch_ys[1][4 - 1] = 1
+  batch_ys = np.array(batch_ys)
+
+  # Force conv1 to see features exactly. Diamond, cross, hor, ver.
+  value = sess.run(g.W_conv1)
+  per_kernel = np.transpose(value, (3, 2, 0, 1))
+  per_kernel[0][0] = trainset.draw_cross()
+  per_kernel[1][0] = trainset.draw_diamond()
+  per_kernel[2][0] = trainset.draw_hor()
+  per_kernel[3][0] = trainset.draw_ver()
+  per_kernel = tf.transpose(per_kernel, (2, 3, 1, 0))
+  sess.run(tf.assign(g.W_conv1, per_kernel))
+
+  # Set conv2 too.
+  value = sess.run(g.W_conv2)
+  per_kernel = np.transpose(value, (2, 3, 0, 1))
+  blank = np.full((4, 4), -1, np.float32)
+  # Firstly, from neuron that detects crosses.
+  kernel = blank.copy()
+  for i in range(4):
+    kernel[0, i] = kernel[1, i] = 1
+  per_kernel[0][0] = kernel
+  per_kernel[0][1] = blank.copy()
+  # Secondly, from neuron that detects diamonds.
+  per_kernel[1][0] = blank.copy()
+  per_kernel[1][1] = blank.copy()
+  # Thirdly, from neuron that detects hors.
+  per_kernel[2][0] = blank.copy()
+  per_kernel[2][1] = blank.copy()
+  # Lastly, from neuron that detects vers.
+  kernel = blank.copy()
+  for i in range(4):
+    kernel[2, i] = kernel[3, i] = 1
+  per_kernel[3][0] = blank.copy()
+  per_kernel[3][1] = kernel
+  per_kernel = tf.transpose(per_kernel, (2, 3, 0, 1))
+  sess.run(tf.assign(g.W_conv2, per_kernel))
+
   def train():
-    # batch_xs, batch_ys = mnist.train.next_batch(batch_size)
-    # print(batch_xs.shape)
-    # print(batch_ys[0])
-    batch_xs = [trainset.draw_class1().reshape(784), trainset.draw_class2().reshape(784)]
-    batch_xs = np.array(batch_xs)
-    batch_ys = [np.zeros((10)), np.zeros((10))]
-    batch_ys[0][7 - 1] = 1
-    batch_ys[1][4 - 1] = 1
-    batch_ys = np.array(batch_ys)
-
-    # Force conv1 to see features exactly. Diamond, cross, hor, ver.
-    value = sess.run(g.W_conv1)
-    per_kernel = np.transpose(value, (3, 2, 0, 1))
-    per_kernel[0][0] = trainset.draw_cross()
-    per_kernel[1][0] = trainset.draw_diamond()
-    per_kernel[2][0] = trainset.draw_hor()
-    per_kernel[3][0] = trainset.draw_ver()
-    per_kernel = tf.transpose(per_kernel, (2, 3, 1, 0))
-    sess.run(tf.assign(g.W_conv1, per_kernel))
-
-    acc_val = sess.run(accuracy,
-      feed_dict={g.x: batch_xs, g.y_: batch_ys, g.keep_prob: 1.0})
-    print('Before training: ' + str(acc_val))
-
     for i in range(10000):
       sess.run(train_step, feed_dict={g.x: batch_xs, g.y_: batch_ys, g.keep_prob:1.0})
       acc_val = sess.run(accuracy,
         feed_dict={g.x: batch_xs, g.y_: batch_ys, g.keep_prob: 1.0})
-      print('Acc {}: {}'.format(i, acc_val))
+      print('Train step {}'.format(i, acc_val), end='\r')
       if acc_val == 1:
+        print('\n')
         break
 
     acc_val = sess.run(accuracy,
       feed_dict={g.x: batch_xs, g.y_: batch_ys, g.keep_prob: 1.0})
-    print('After training: ' + str(acc_val))
+
+  def getActivations(layer,stimuli):
+    units = sess.run(layer,feed_dict={x:np.reshape(stimuli,[1,784],order='F'),keep_prob:1.0})
+    plotNNFilter(units)
+
+  def plotNNFilter(units):
+    filters = units.shape[3]
+    plt.figure(1, figsize=(20,20))
+    n_columns = 6
+    n_rows = math.ceil(filters / n_columns) + 1
+    for i in range(filters):
+        plt.subplot(n_rows, n_columns, i+1)
+        plt.title('Filter ' + str(i))
+        plt.imshow(units[0,:,:,i], interpolation="nearest", cmap="gray")
+    plt.show()
 
   def visualize():
+    # units = sess.run(g.h_conv1,
+    #   feed_dict={g.x: [batch_xs[0]], g.y_: [batch_ys[0]], g.keep_prob: 1.0})
+    # plotNNFilter(units)
+
+    print('Input type 1: 7th category')
+    print(sess.run(g.y_conv,
+      feed_dict={g.x: [batch_xs[0]], g.y_: [batch_ys[0]], g.keep_prob: 1.0}))
+    print('Input type 2: 4th category')
+    print(sess.run(g.y_conv,
+      feed_dict={g.x: [batch_xs[1]], g.y_: [batch_ys[1]], g.keep_prob: 1.0}))
+
     # Draw inputs
     input = tf.constant(np.array([trainset.draw_class1()]))
     input = tf.expand_dims(input, 3)
-    print(input.shape)
 
     input = tf.summary.image('inputs/class1', input)
     writer.add_summary(sess.run(input))
 
     input = tf.constant(np.array([trainset.draw_class2()]))
     input = tf.expand_dims(input, 3)
-    print(input.shape)
 
     input = tf.summary.image('inputs/class2', input)
     writer.add_summary(sess.run(input))

@@ -5,14 +5,14 @@ def kernel_on_grid(kernel, pad):
   def factorization(n):
       for i in range(int(sqrt(float(n))), 0, -1):
         if n % i == 0:
-          if i == 1: print('Who would enter a prime number of filters')
+          # if i == 1: print('Who would enter a prime number of filters')
           return (i, int(n / i))
   (grid_Y, grid_X) = factorization (kernel.get_shape()[3].value)
-  print ('grid: %d = (%d, %d)' % (kernel.get_shape()[3].value, grid_Y, grid_X))
+  # print ('grid: %d = (%d, %d)' % (kernel.get_shape()[3].value, grid_Y, grid_X))
 
   x_min = tf.reduce_min(kernel)
   x_max = tf.reduce_max(kernel)
-  kernel = (kernel - x_min) / (x_max - x_min)
+  # kernel = (kernel - x_min) / (x_max - x_min)
 
   # pad X and Y
   x = tf.pad(kernel, tf.constant( [[pad,pad],[pad, pad],[0,0],[0,0]] ), mode = 'CONSTANT')
@@ -27,7 +27,7 @@ def kernel_on_grid(kernel, pad):
   x = tf.transpose(x, (3, 0, 1, 2))
   # organize grid on Y axis
   x = tf.reshape(x, tf.stack([grid_X, Y * grid_Y, X, channels]))
-  print(x.shape)
+  # print(x.shape)
 
   # switch X and Y axes
   x = tf.transpose(x, (0, 2, 1, 3))
