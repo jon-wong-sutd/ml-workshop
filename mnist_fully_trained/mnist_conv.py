@@ -6,12 +6,9 @@ import argparse
 import sys
 
 from tensorflow.examples.tutorials.mnist import input_data
-from tensorflow.contrib.learn.python.learn.datasets.mnist import DataSet
 
 import tensorflow as tf
 
-import elastic_deform as ed
-import mnist_data as md
 import numpy as np
 from pathlib import Path
 

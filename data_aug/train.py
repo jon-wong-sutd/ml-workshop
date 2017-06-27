@@ -1,23 +1,3 @@
-# Copyright 2015 The TensorFlow Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-
-"""A very simple MNIST classifier.
-
-See extensive documentation at
-http://tensorflow.org/tutorials/mnist/beginners/index.md
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -30,6 +10,7 @@ from tensorflow.contrib.learn.python.learn.datasets.mnist import DataSet
 
 import tensorflow as tf
 
+sys.path.insert(0, '../')
 import elastic_deform as ed
 import mnist_data as md
 import numpy as np
@@ -121,64 +102,45 @@ def main(_):
     # Initialize all variables first.
     saver.restore(sess, init_save)
 
-    highest_acc = 0
-    highest_acc_i = 0
-
     checkpoint_step = 100
 
-    # Train with expanded set.
-    for i in range(train_steps):
-      batch_xs, batch_ys = expanded_dataset.next_batch(batch_size)
-      sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
-      if i > 0 and i % checkpoint_step == 0:
-        # Test trained model
-        summ, max_summ, acc_val = sess.run([acc_summ, max_acc_summ, accuracy],
-                   feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
-        print('Accuracy {} (expanded): {}'.format(i, acc_val))
-        expanded_writer.add_summary(summ, i)
-        if acc_val > highest_acc:
-          expanded_writer.add_summary(max_summ, i)
-          highest_acc = acc_val
-          highest_acc_i = i
-        # If more than 5 checkpoints without improvement, quit.
-        if i - highest_acc_i >= 5 * checkpoint_step:
-          break
+    def steps(dataset, label, writer):
+      highest_acc = 0
+      highest_acc_i = 0
+      for i in range(train_steps):
+        batch_xs, batch_ys = dataset.next_batch(batch_size)
+        sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
+        if i > 0 and i % checkpoint_step == 0:
+          # Test trained model
+          summ, max_summ, acc_val = sess.run([acc_summ, max_acc_summ, accuracy],
+                     feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
+          print('Accuracy {} ({}): {}'.format(i, label, acc_val))
+          writer.add_summary(summ, i)
+          if acc_val > highest_acc:
+            writer.add_summary(max_summ, i)
+            highest_acc = acc_val
+            highest_acc_i = i
+          # If more than 5 checkpoints without improvement, quit.
+          if i - highest_acc_i >= 5 * checkpoint_step:
+            break
 
-    highest_acc = 0
-    highest_acc_i = 0
-
+    steps(expanded_dataset, 'expanded', expanded_writer)
     saver.restore(sess, init_save)
-    # Train with normal set.
-    for i in range(train_steps):
-      batch_xs, batch_ys = normal_dataset.next_batch(batch_size)
-      sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob:0.5})
-      if i > 0 and i % checkpoint_step == 0:
-        # Test trained model
-        summ, max_summ, acc_val = sess.run([acc_summ, max_acc_summ, accuracy],
-                   feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
-        print('Accuracy {} (normal): {}'.format(i, acc_val))
-        normal_writer.add_summary(summ, i)
-        if acc_val > highest_acc:
-          normal_writer.add_summary(max_summ, i)
-          highest_acc = acc_val
-          highest_acc_i = i
-        # If more than 5 checkpoints without improvement, quit.
-        if i - highest_acc_i >= 5 * checkpoint_step:
-          break
+    steps(normal_dataset, 'normal', normal_writer)
 
   n = 10
   # Expand normal set by duplicating 5 times. 6 times of normal set size in total.
-  normal_dataset, expanded_dataset = md.select_data(n, 5)
+  normal_dataset, expanded_dataset = md.select_data(n, 5, FLAGS.data_dir)
   # Normal: Highest 0.7601 at step 990. Seems to peak at steps 600-700.
   # Expanded: No peak seen even at step 1000.
-  train_steps = 1000
+  train_steps = 5000
   print('train_steps: {}'.format(train_steps))
   batch_size = 50
   train(train_steps, batch_size, normal_dataset, expanded_dataset)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
-  parser.add_argument('--data_dir', type=str, default='MNIST-data',
+  parser.add_argument('--data_dir', type=str, default='../MNIST-data',
                       help='Directory for storing input data')
   FLAGS, unparsed = parser.parse_known_args()
   FLAGS.data_aug = True
