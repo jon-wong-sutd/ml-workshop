@@ -71,9 +71,11 @@ def draw_four():
 
   return img
 
-def draw_cross():
+def draw_cross(for_neuron=False):
   img = np.ndarray((7, 7), dtype=np.float32)
   img.fill(0)
+  if for_neuron is True:
+    img.fill(-1)
 
   for i in range(5):
     img[i + 1, i + 1] = 1
@@ -81,9 +83,11 @@ def draw_cross():
 
   return img
 
-def draw_hor():
+def draw_hor(for_neuron=False):
   img = np.ndarray((7, 7), dtype=np.float32)
   img.fill(0)
+  if for_neuron is True:
+    img.fill(-1)
 
   for i in range(2, 5):
     img[1, i] = 1
@@ -91,9 +95,11 @@ def draw_hor():
 
   return img
 
-def draw_ver():
+def draw_ver(for_neuron=False):
   img = np.ndarray((7, 7), dtype=np.float32)
   img.fill(0)
+  if for_neuron is True:
+    img.fill(-1)
 
   for i in range(2, 5):
     img[i, 1] = 1
@@ -101,9 +107,11 @@ def draw_ver():
 
   return img
 
-def draw_diamond():
+def draw_diamond(for_neuron=False):
   img = np.ndarray((7, 7), dtype=np.float32)
   img.fill(0)
+  if for_neuron is True:
+    img.fill(-1)
 
   img[2, 3] = img[3, 2] = img[3, 4] = img[4, 3] = 1
   return img

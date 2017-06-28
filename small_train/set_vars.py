@@ -8,10 +8,10 @@ def set_conv1(sess, deactivate=False):
   value = sess.run(g.W_conv1)
   per_kernel = np.transpose(value, (3, 2, 0, 1))
   if deactivate is False:
-    per_kernel[0][0] = trainset.draw_cross()
-    per_kernel[1][0] = trainset.draw_diamond()
-    per_kernel[2][0] = trainset.draw_hor()
-    per_kernel[3][0] = trainset.draw_ver()
+    per_kernel[0][0] = trainset.draw_cross(for_neuron=True)
+    per_kernel[1][0] = trainset.draw_diamond(for_neuron=True)
+    per_kernel[2][0] = trainset.draw_hor(for_neuron=True)
+    per_kernel[3][0] = trainset.draw_ver(for_neuron=True)
   else:
     blank = np.full((7, 7), -1, np.float32)
     per_kernel[0][0] = blank.copy()
