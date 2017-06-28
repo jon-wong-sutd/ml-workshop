@@ -21,7 +21,8 @@ def set_conv1(sess, deactivate=False):
   per_kernel = tf.transpose(per_kernel, (2, 3, 1, 0))
   sess.run(tf.assign(g.W_conv1, per_kernel))
 
-def set_conv2(sess, deactivate=False, corrupt=False):
+def set_conv2(sess, deactivate=False, corrupt=False, cross_only=False, ver_only=False,
+                diamond_only=False, hor_only=False):
   value = sess.run(g.W_conv2)
   per_kernel = np.transpose(value, (2, 3, 0, 1))
   blank = np.full((4, 4), -1, np.float32)
@@ -38,19 +39,26 @@ def set_conv2(sess, deactivate=False, corrupt=False):
   if deactivate is False:
     # Firstly, from neuron that detects crosses.
     kernel = blank.copy()
-    for i in range(span):
-      kernel[0, i] = kernel[1, i] = 1
-    per_kernel[0][0] = kernel
+    if ver_only is False:
+      for i in range(span):
+        kernel[0, i] = kernel[1, i] = 1
+    if diamond_only is True and hor_only is False:
+      per_kernel[1][0] = kernel
+    elif hor_only is False:
+      per_kernel[0][0] = kernel
     # Secondly, from neuron that detects diamonds.
     # But no data contains diamonds.
     # Thirdly, from neuron that detects hors.
     # But no data contains hors.
     # Lastly, from neuron that detects vers.
     kernel = blank.copy()
-    for i in range(span):
-      kernel[2, i] = kernel[3, i] = 1
-    per_kernel[3][0] = blank.copy()
-    per_kernel[3][1] = kernel
+    if cross_only is False and diamond_only is False:
+      for i in range(span):
+        kernel[2, i] = kernel[3, i] = 1
+    if hor_only is True and diamond_only is False:
+      per_kernel[2][1] = kernel
+    elif diamond_only is False:
+      per_kernel[3][1] = kernel
 
   per_kernel = tf.transpose(per_kernel, (2, 3, 0, 1))
   sess.run(tf.assign(g.W_conv2, per_kernel))

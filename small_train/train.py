@@ -18,8 +18,6 @@ import numpy as np
 import math
 from pathlib import Path
 
-import set_vars as sv
-
 import matplotlib.pyplot as plt
 
 # import sys
@@ -55,11 +53,8 @@ def main(_):
   batch_ys[1][4 - 1] = 1
   batch_ys = np.array(batch_ys)
 
-  # Force conv1 to see features exactly. Diamond, cross, hor, ver.
-  sv.set_conv1(sess)
-
-  # Set conv2 too.
-  sv.set_conv2(sess)
+  import set_conv as sc
+  sc.set_conv(sess)
 
   acc_val = 0
   def train():
