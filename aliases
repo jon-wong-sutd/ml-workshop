@@ -1,0 +1,8 @@
+function showboard() {
+  logdir="$@"
+  if [ -z "$logdir" ]; then
+    logdir="log"
+  fi
+  python3 -m tensorflow.tensorboard --logdir="$logdir";
+}
+alias clearlog='rm -rf log'
