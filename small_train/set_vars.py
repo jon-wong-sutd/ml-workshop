@@ -29,7 +29,7 @@ def set_conv2(sess, deactivate=False, corrupt=False, cross=True, ver=True,
                 diamond=False, hor=False):
   value = sess.run(g.W_conv2)
   per_kernel = np.transpose(value, (2, 3, 0, 1))
-  blank = np.full((4, 4), 0, np.float32)
+  blank = np.full((4, 4), -1, np.float32)
   negative = np.full((4, 4), -1, np.float32)
 
   # Set all blank first.

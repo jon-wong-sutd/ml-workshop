@@ -73,19 +73,30 @@ def translate(image):
   return interpolation.shift(image, (row_shift, col_shift))
 
 def rotate_test(image):
-  im = image
+  im = white_border(image)
 
-  for i in range(4):
-    # deformed = deform(image, alpha, sigma)
-    # deformed = deform(image)
-    deformed = rotate(image, (i + 1) * -10)
-    im = np.concatenate((im, deformed))
+  deformed = white_border(rotate(image))
+  im = np.concatenate((im, deformed))
 
-  for i in range(4):
-    # deformed = deform(image, alpha, sigma)
-    # deformed = deform(image)
-    deformed = rotate(image, (i + 1) * 10)
-    im = np.concatenate((im, deformed))
+  # for i in range(4):
+  #   # deformed = deform(image, alpha, sigma)
+  #   # deformed = deform(image)
+  #   deformed = rotate(image, (i + 1) * -10)
+  #   im = np.concatenate((im, deformed))
+
+  # for i in range(4):
+  #   # deformed = deform(image, alpha, sigma)
+  #   # deformed = deform(image)
+  #   deformed = rotate(image, (i + 1) * 10)
+  #   im = np.concatenate((im, deformed))
+
+  return im
+
+def deform_test(image):
+  im = white_border(image)
+
+  deformed = white_border(deform(image))
+  im = np.concatenate((im, deformed))
 
   return im
 
@@ -99,17 +110,25 @@ def translate_test(image):
 
 def test():
   """Deform the first element of 'train' data set."""
-  input_data_dir= '/tmp/tensorflow/mnist/input_data'
+  input_data_dir= 'MNIST-data'
 
   data_sets = input_data.read_data_sets(input_data_dir, fake_data=False)
 
   image = data_sets.train.images[0,:].reshape((28, 28))
 
-  # im = rotate_test(image)
-  im = translate_test(image)
-
+  im = rotate_test(image)
   plt.imshow(im, cmap='gray')
+  plt.title('Rotate')
+  plt.show()
 
+  im = translate_test(image)
+  plt.imshow(im, cmap='gray')
+  plt.title('Translate')
+  plt.show()
+
+  im = deform_test(image)
+  plt.imshow(im, cmap='gray')
+  plt.title('Deform')
   plt.show()
 
 if __name__=='__main__':
